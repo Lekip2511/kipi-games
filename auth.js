@@ -182,7 +182,8 @@ window.KipiAuth = (function () {
           if (onSuccess) onSuccess(_user);
         },
         auto_select: false,
-        cancel_on_tap_outside: true
+        cancel_on_tap_outside: true,
+        itp_support: true
       });
 
       renderCustomButton(buttonId);
