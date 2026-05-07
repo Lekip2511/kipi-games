@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kipi Games — Casino Premium</title>
+  <link rel="icon" href="icono.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@500;600;700;800;900&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #050505;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      overflow-x: hidden;
+    }
+
+    /* ─── Partículas de fondo ─── */
+    #particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #d4af37;
+      border-radius: 50%;
+      animation: floatUp linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(100vh) scale(0); }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.2; }
+      100% { opacity: 0; transform: translateY(-10vh) scale(2); }
+    }
+
+    /* ─── Container central ─── */
+    #hub {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 880px;
+    }
+
+    /* ─── Header ─── */
+    #header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    #logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.25), 0 4px 15px rgba(0, 0, 0, 0.6);
+      object-fit: cover;
+    }
+
+    .header-line {
+      width: 80px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #d4af37, transparent);
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: #f5f0e6;
+      letter-spacing: 6px;
+      margin: 14px 0 2px;
+      text-shadow: 0 0 40px rgba(212, 175, 55, 0.25);
+    }
+
+    .subtitle {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #d4af37;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .tagline {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.35);
+      font-style: italic;
+      letter-spacing: 2px;
+      margin-top: 8px;
+    }
+
+    /* ─── Game Grid ─── */
+    #games-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .game-card {
+      background: linear-gradient(180deg, rgba(25, 25, 25, 0.9), rgba(12, 12, 12, 0.95));
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 14px;
+      padding: 22px 16px 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+
+    .game-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.06), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(212, 175, 55, 0.4);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 175, 55, 0.1);
+    }
+
+    .game-card:hover::before {
+      opacity: 1;
+    }
+
+    .game-card.available {
+      border-color: rgba(212, 175, 55, 0.35);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.08);
+    }
+
+    .game-card.available:hover {
+      border-color: rgba(212, 175, 55, 0.6);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 35px rgba(212, 175, 55, 0.2);
+    }
+
+    .game-card.locked {
+      cursor: default;
+      filter: grayscale(0.4);
+      opacity: 0.7;
+    }
+
+    .game-card.locked:hover {
+      transform: translateY(-3px);
+      border-color: rgba(212, 175, 55, 0.2);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .game-card.locked:hover::before {
+      opacity: 0.5;
+    }
+
+    .game-icon {
+      font-size: 40px;
+      line-height: 1;
+      margin-bottom: 10px;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #e0d8c8;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge-available {
+      background: rgba(212, 175, 55, 0.15);
+      color: #f5d061;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
+    }
+
+    .badge-soon {
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #4caf50;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1.5s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.5); }
+    }
+
+    /* ─── Footer ─── */
+    #footer {
+      text-align: center;
+      margin-top: 30px;
+      z-index: 1;
+    }
+
+    #footer p {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.15);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ─── Sección de login / usuario ─── */
+    #auth-section {
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    #login-card {
+      display: inline-block;
+      background: linear-gradient(180deg, rgba(22,22,22,0.95), rgba(14,14,14,0.95));
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: 20px;
+      padding: 32px 40px 28px;
+      box-shadow:
+        0 0 40px rgba(212,175,55,0.06),
+        0 8px 32px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    #login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 20%;
+      right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent);
+    }
+
+    #login-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 25%;
+      right: 25%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(212,175,55,0.25), transparent);
+    }
+
+    .login-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    #login-prompt {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+      font-style: italic;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+      position: relative;
+    }
+
+    #login-subtitle {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      color: rgba(212,175,55,0.5);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    #google-signin-btn {
+      display: inline-block;
+      position: relative;
+    }
+
+    /* Override Google button para mejor integración */
+    #google-signin-btn > div {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+    }
+
+    #google-signin-btn > div:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5), 0 0 15px rgba(212,175,55,0.1) !important;
+    }
+
+    #user-bar {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: rgba(25, 25, 25, 0.7);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 16px;
+      padding: 12px 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    #user-bar.visible { display: flex; }
+
+    #user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid rgba(212, 175, 55, 0.4);
+      object-fit: cover;
+    }
+
+    #user-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #e0d8c8;
+      letter-spacing: 1px;
+    }
+
+    #user-chips {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 900;
+      color: #f5d061;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #user-chips::before {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      background: radial-gradient(circle, #f5d061, #b8860b);
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.3);
+    }
+
+    .btn-bonus {
+      background: linear-gradient(180deg, #f5d061, #e6b822);
+      color: #4a3500;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 0 #b38f1a, 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-bonus:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn-bonus:active { transform: translateY(2px); box-shadow: 0 1px 0 #b38f1a; }
+    .btn-bonus:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+
+    .btn-logout {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 10px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      border-color: rgba(255,255,255,0.4);
+      color: #fff;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      body { padding: 20px 12px; }
+
+      #logo { width: 60px; height: 60px; border-radius: 14px; }
+
+      h1 { font-size: 30px; letter-spacing: 4px; }
+      .subtitle { font-size: 10px; letter-spacing: 5px; }
+      .tagline { font-size: 12px; }
+      .header-line { width: 50px; }
+
+      #games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .game-card { padding: 16px 10px 14px; border-radius: 12px; }
+      .game-icon { font-size: 30px; margin-bottom: 6px; }
+      .game-name { font-size: 14px; margin-bottom: 8px; }
+      .game-badge { font-size: 8px; padding: 3px 10px; }
+
+      #user-bar { gap: 8px; padding: 10px 16px; }
+      #user-avatar { width: 32px; height: 32px; }
+      #user-name { font-size: 12px; }
+      #user-chips { font-size: 16px; }
+      #user-chips::before { width: 10px; height: 10px; }
+      .btn-bonus { padding: 6px 12px; font-size: 10px; }
+      .btn-logout { padding: 5px 10px; font-size: 9px; }
+
+      #login-card { padding: 22px 20px 20px; border-radius: 16px; }
+      #login-prompt { font-size: 14px; }
+      #login-subtitle { font-size: 9px; letter-spacing: 3px; margin-bottom: 14px; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      #games-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Partículas doradas -->
+  <div id="particles"></div>
+
+  <!-- Hub -->
+  <div id="hub">
+    <!-- Header -->
+    <div id="header">
+      <img id="logo" src="icono.png" alt="Kipi Games">
+      <div class="header-line"></div>
+      <h1>KIPI GAMES</h1>
+      <div class="subtitle">Casino Premium</div>
+      <div class="header-line"></div>
+      <p class="tagline">Elige tu juego</p>
+    </div>
+
+    <!-- Auth Section -->
+    <div id="auth-section">
+      <!-- No logueado -->
+      <div id="login-area">
+        <div id="login-card">
+          <div class="login-glow"></div>
+          <p id="login-prompt">Accede con tu cuenta</p>
+          <p id="login-subtitle">para guardar tus fichas</p>
+          <div id="google-signin-btn"></div>
+        </div>
+      </div>
+
+      <!-- Logueado -->
+      <div id="user-bar">
+        <img id="user-avatar" src="" alt="">
+        <span id="user-name"></span>
+        <span id="user-chips">0</span>
+        <button id="bonus-btn" class="btn-bonus">BONUS</button>
+        <button id="logout-btn" class="btn-logout">SALIR</button>
+      </div>
+    </div>
+
+    <!-- Game Grid -->
+    <div id="games-grid">
+      <!-- Blackjack — Disponible -->
+      <a href="blackjack.html" class="game-card available">
+        <span class="game-icon">🂡</span>
+        <div class="game-name">Blackjack</div>
+        <span class="game-badge badge-available"><span class="pulse-dot"></span>DISPONIBLE</span>
+      </a>
+
+      <!-- Poker — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🃏</span>
+        <div class="game-name">Poker</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Ruleta — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🎡</span>
+        <div class="game-name">Ruleta</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Slots — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🎰</span>
+        <div class="game-name">Slots</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Baccarat — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🎴</span>
+        <div class="game-name">Baccarat</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Craps — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🎲</span>
+        <div class="game-name">Craps</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Texas Hold'em — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">♠️</span>
+        <div class="game-name">Texas Hold'em</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+
+      <!-- Video Poker — Próximamente -->
+      <div class="game-card locked">
+        <span class="game-icon">🎰</span>
+        <div class="game-name">Video Poker</div>
+        <span class="game-badge badge-soon">PRÓXIMAMENTE</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer">
+      <p>más juegos próximamente</p>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Partículas doradas flotantes
+    (function () {
+      const container = document.getElementById('particles');
+      const count = 30;
+
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.width = (1 + Math.random() * 2) + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+      }
+    })();
+
+    // Evitar que las cartas locked naveguen
+    document.querySelectorAll('.game-card.locked').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        card.style.transform = 'scale(0.96)';
+        setTimeout(() => { card.style.transform = ''; }, 200);
+      });
+    });
+
+    // ─── Auth ───
+    const loginArea = document.getElementById('login-area');
+    const userBar = document.getElementById('user-bar');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const userChips = document.getElementById('user-chips');
+    const bonusBtn = document.getElementById('bonus-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const blackjackLink = document.querySelector('.game-card.available');
+
+    function updateUI(user) {
+      if (user) {
+        loginArea.style.display = 'none';
+        userBar.classList.add('visible');
+        userAvatar.src = user.avatar || 'icono.png';
+        userName.textContent = user.name;
+        userChips.textContent = user.chips.toLocaleString();
+        updateBonusButton();
+        if (blackjackLink) blackjackLink.style.pointerEvents = 'auto';
+      } else {
+        loginArea.style.display = 'block';
+        userBar.classList.remove('visible');
+        updateBonusButton();
+        if (blackjackLink) blackjackLink.style.pointerEvents = 'none';
+      }
+    }
+
+    function updateBonusButton() {
+      const user = KipiAuth.getUser();
+      if (!user) { bonusBtn.textContent = 'BONUS'; bonusBtn.disabled = true; return; }
+
+      const now = new Date();
+      const hour = now.getHours();
+      const today = now.toISOString().slice(0, 10);
+
+      if (user.lastDailyBonus === today) {
+        bonusBtn.textContent = 'RECLAMADO';
+        bonusBtn.disabled = true;
+      } else if (hour < 13) {
+        const minsLeft = (13 - hour) * 60 - now.getMinutes();
+        const h = Math.floor(minsLeft / 60);
+        const m = minsLeft % 60;
+        bonusBtn.textContent = `BONUS ${h}h ${m}m`;
+        bonusBtn.disabled = true;
+      } else {
+        bonusBtn.textContent = 'RECLAMAR +1K';
+        bonusBtn.disabled = false;
+      }
+    }
+
+    // Revisar bonus cada minuto
+    setInterval(updateBonusButton, 60000);
+
+    bonusBtn.addEventListener('click', async () => {
+      try {
+        bonusBtn.disabled = true;
+        bonusBtn.textContent = '...';
+        const result = await KipiAuth.claimDailyBonus();
+        if (result.success) {
+          alert('¡Bono diario reclamado! +1000 fichas');
+        }
+        updateUI(KipiAuth.getUser());
+      } catch (err) {
+        alert(err.message);
+        updateUI(KipiAuth.getUser());
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      KipiAuth.logout();
+      updateUI(null);
+    });
+
+    // Proteger Blackjack: requiere login
+    if (blackjackLink) {
+      blackjackLink.addEventListener('click', (e) => {
+        if (!KipiAuth.getUser()) {
+          e.preventDefault();
+          alert('Inicia sesión con Google para jugar');
+        }
+      });
+    }
+
+    // Escuchar cambios de usuario
+    KipiAuth.onUserChange((user) => {
+      updateUI(user);
+    });
+
+    // Inicializar
+    (async function init() {
+      // Intentar restaurar sesión
+      const user = await KipiAuth.fetchMe();
+      updateUI(user);
+
+      // Inicializar Google Sign-In
+      await KipiAuth.initGoogleSignIn('google-signin-btn', (user) => {
+        updateUI(user);
+      });
+    })();
+  </script>
+</body>
+
+</html>
