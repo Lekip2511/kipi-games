@@ -39,21 +39,24 @@ window.KipiAuth = (function () {
 
   async function fetchMe() {
     const jwt = getLocal('kipi_jwt');
-    if (!jwt) return null;
 
-    try {
-      const data = await api('GET', '/api/me');
-      _user = {
-        id: data.id, name: data.name, email: data.email, avatar: data.avatar,
-        chips: data.chips, lastDailyBonus: data.lastDailyBonus
-      };
-      setLocal('kipi_session', JSON.stringify({ sub: data.id, name: data.name, email: data.email, avatar: data.avatar, ts: Date.now() }));
-      if (_onUserChange) _onUserChange(_user);
-      return _user;
-    } catch (e) {
-      // Backend caído: intentar caché local
-      return fetchFromCache();
+    if (jwt) {
+      try {
+        const data = await api('GET', '/api/me');
+        _user = {
+          id: data.id, name: data.name, email: data.email, avatar: data.avatar,
+          chips: data.chips, lastDailyBonus: data.lastDailyBonus
+        };
+        setLocal('kipi_session', JSON.stringify({ sub: data.id, name: data.name, email: data.email, avatar: data.avatar, ts: Date.now() }));
+        setLocal('kipi_cached_chips', data.chips.toString());
+        if (_onUserChange) _onUserChange(_user);
+        return _user;
+      } catch (e) {
+        // Backend caído: intentar caché local
+      }
     }
+
+    return fetchFromCache();
   }
 
   async function fetchFromCache() {
@@ -210,6 +213,7 @@ window.KipiAuth = (function () {
         lastDailyBonus: getLocal('kipi_cached_bonus') || ''
       };
       setLocal('kipi_session', JSON.stringify({ sub: id, name, email, avatar, ts: Date.now() }));
+      setLocal('kipi_cached_chips', _user.chips.toString());
       if (_onUserChange) _onUserChange(_user);
       return true;
     }
