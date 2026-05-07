@@ -586,6 +586,34 @@
       letter-spacing: 2px;
     }
 
+    .btn-menu-back {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 500;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-family: 'Montserrat', sans-serif;
+      color: #d4af37;
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+
+    .btn-menu-back:hover {
+      background: rgba(20, 20, 20, 0.9);
+      border-color: rgba(212, 175, 55, 0.6);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
     .btn:hover:not(:disabled) {
       transform: translateY(-2px);
       filter: brightness(1.1);
@@ -983,6 +1011,7 @@
       .btn-double { box-shadow: 0 4px 0 #0d47a1, 0 5px 10px rgba(0, 0, 0, 0.4); }
       .btn-split { box-shadow: 0 4px 0 #bf360c, 0 5px 10px rgba(0, 0, 0, 0.4); }
       .btn-allin { box-shadow: 0 4px 0 #8b6914, 0 5px 10px rgba(0, 0, 0, 0.4); }
+      .btn-menu-back { top: 8px; left: 8px; padding: 5px 10px; font-size: 10px; border-radius: 5px; letter-spacing: 1px; }
       .btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 2px 3px rgba(0, 0, 0, 0.4) !important; }
       .btn:disabled { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); transform: translateY(2px); }
       #clear-bet { box-shadow: 0 4px 0 #212121, 0 5px 10px rgba(0, 0, 0, 0.4); }
@@ -1070,6 +1099,9 @@
   <div id="game-container">
     <div id="table-surface"></div>
     <div id="lighting-overlay"></div>
+
+    <!-- Botón MENU -->
+    <button id="menu-back-btn" class="btn-menu-back" title="Volver al menú">MENÚ</button>
 
     <!-- Brazos Animados -->
     <div id="dealer-arm" class="arm dealer-arm">
@@ -2095,6 +2127,9 @@
     document.getElementById('stand-btn').addEventListener('click', stand);
     document.getElementById('double-btn').addEventListener('click', doubleDown);
     document.getElementById('split-btn').addEventListener('click', split);
+    document.getElementById('menu-back-btn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
     // ─── Inicializacion con autenticacion ───
     async function initGame() {

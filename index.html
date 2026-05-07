@@ -674,6 +674,10 @@
     logoutBtn.addEventListener('click', () => {
       KipiAuth.logout();
       updateUI(null);
+      // Re-renderizar botón de login
+      KipiAuth.initGoogleSignIn('google-signin-btn', (user) => {
+        updateUI(user);
+      });
     });
 
     // Proteger Blackjack: requiere login
