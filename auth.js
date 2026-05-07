@@ -3,7 +3,7 @@ window.KipiAuth = (function () {
   // Auto-detectar backend: local usa mismo origen, Netlify usa Render
   const host = window.location.hostname;
   const isLocal = host === 'localhost' || host.startsWith('127.') || host.startsWith('172.') || host.startsWith('192.168.');
-  const API_BASE = isLocal ? '' : 'https://kipi-games.onrender.com';
+  const API_BASE = isLocal ? '' : 'https://kipigames.loca.lt';
 
   let _token = localStorage.getItem('kipi_token');
   let _user = null;
@@ -14,6 +14,11 @@ window.KipiAuth = (function () {
   async function api(method, path, body) {
     const headers = { 'Content-Type': 'application/json' };
     if (_token) headers['Authorization'] = 'Bearer ' + _token;
+
+    // Bypass localtunnel interstitial page
+    if (API_BASE.includes('loca.lt')) {
+      headers['Bypass-Tunnel-Reminder'] = 'true';
+    }
 
     const res = await fetch(API_BASE + path, {
       method,
