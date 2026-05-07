@@ -125,17 +125,16 @@ window.KipiAuth = (function () {
       return;
     }
 
-    // Obtener client ID del endpoint /api/config (solo si existe el backend)
-    let clientId = '';
+    // Client ID: intenta obtener del backend local, si no usa el de producción
+    let clientId = '116466179084-pv098dj9cj215eu8aaa93guu53dlpneo.apps.googleusercontent.com';
     try {
       const res = await fetch('/api/config');
       if (res.ok) {
         const config = await res.json();
-        clientId = config.googleClientId || '';
+        if (config.googleClientId) clientId = config.googleClientId;
       }
     } catch (e) {
-      // Sin backend, usar client ID hardcodeado para Netlify
-      clientId = '116466179084-pv098dj9cj215eu8aaa93guu53dlpneo.apps.googleusercontent.com';
+      // Sin backend, se usa el client ID por defecto
     }
 
     if (!clientId) {
