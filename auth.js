@@ -1,18 +1,24 @@
-// Kipi Games — Auth OAuth + Backend para fichas sincronizadas
+// Kipi Games — Auth OAuth + localStorage persistente
 window.KipiAuth = (function () {
   let _user = null;
   let _onUserChange = null;
 
   const CLIENT_ID = '116466179084-pv098dj9cj215eu8aaa93guu53dlpneo.apps.googleusercontent.com';
   const REDIRECT_URI = window.location.origin + '/';
-  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname.startsWith('127.') || window.location.hostname.startsWith('172.') || window.location.hostname.startsWith('192.168.')
-    ? ''
-    : 'https://kipi-games.onrender.com';
 
-  // ====== Helpers localStorage (caché) ======
-  function getLocal(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
-  function setLocal(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
-  function removeLocal(key) { try { localStorage.removeItem(key); } catch(e) {} }
+  // ====== Storage: un solo objeto JSON por usuario ======
+  function getUserData(googleId) {
+    try {
+      const raw = localStorage.getItem('kipi_' + googleId);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function saveUserData(googleId, data) {
+    try {
+      localStorage.setItem('kipi_' + googleId, JSON.stringify(data));
+    } catch (e) { /* storage full */ }
+  }
 
   function decodeJwtPayload(token) {
     try {
@@ -21,143 +27,78 @@ window.KipiAuth = (function () {
     } catch (e) { return null; }
   }
 
-  // ====== API calls ======
-  async function api(method, path, body) {
-    const headers = { 'Content-Type': 'application/json' };
-    const jwt = getLocal('kipi_jwt');
-    if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
-
-    const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error de red');
-    return data;
-  }
-
   // ====== API pública ======
   function getUser() { return _user; }
   function onUserChange(cb) { _onUserChange = cb; }
 
   async function fetchMe() {
-    const jwt = getLocal('kipi_jwt');
-
-    if (jwt) {
-      try {
-        const data = await api('GET', '/api/me');
-        _user = {
-          id: data.id, name: data.name, email: data.email, avatar: data.avatar,
-          chips: data.chips, lastDailyBonus: data.lastDailyBonus
-        };
-        setLocal('kipi_session', JSON.stringify({ sub: data.id, name: data.name, email: data.email, avatar: data.avatar, ts: Date.now() }));
-        setLocal('kipi_cached_chips', data.chips.toString());
-        if (_onUserChange) _onUserChange(_user);
-        return _user;
-      } catch (e) {
-        // Backend caído: intentar caché local
-      }
-    }
-
-    return fetchFromCache();
-  }
-
-  async function fetchFromCache() {
-    const stored = getLocal('kipi_session');
-    if (!stored) return null;
-    try {
-      const session = JSON.parse(stored);
-      if (Date.now() - session.ts > 30 * 24 * 60 * 60 * 1000) { removeLocal('kipi_session'); return null; }
-      // Caché local de fichas
-      const cachedChips = getLocal('kipi_cached_chips');
-      const cachedBonus = getLocal('kipi_cached_bonus');
-      _user = {
-        id: session.sub, name: session.name, email: session.email, avatar: session.avatar,
-        chips: cachedChips !== null ? parseInt(cachedChips) : 1000,
-        lastDailyBonus: cachedBonus || ''
-      };
-      if (_onUserChange) _onUserChange(_user);
-      return _user;
-    } catch (e) { return null; }
+    const lastId = localStorage.getItem('kipi_last_user');
+    if (!lastId) return null;
+    const data = getUserData(lastId);
+    if (!data) return null;
+    _user = {
+      id: lastId, name: data.name, email: data.email, avatar: data.avatar,
+      chips: data.chips, lastDailyBonus: data.lastDailyBonus
+    };
+    if (_onUserChange) _onUserChange(_user);
+    return _user;
   }
 
   async function spendChips(amount) {
     if (!_user) throw new Error('No autenticado');
-    try {
-      const data = await api('POST', '/api/chips/spend', { amount });
-      _user.chips = data.chips;
-      setLocal('kipi_cached_chips', data.chips.toString());
-      if (_onUserChange) _onUserChange(_user);
-      return data;
-    } catch (e) {
-      // Fallback local
-      const local = parseInt(getLocal('kipi_cached_chips') || '0');
-      if (local < amount) throw new Error('Fichas insuficientes');
-      const newChips = local - amount;
-      setLocal('kipi_cached_chips', newChips.toString());
-      _user.chips = newChips;
-      if (_onUserChange) _onUserChange(_user);
-      return { success: true, chips: newChips };
-    }
+    const data = getUserData(_user.id);
+    if (!data || data.chips < amount) throw new Error('Fichas insuficientes');
+    data.chips -= amount;
+    saveUserData(_user.id, data);
+    _user.chips = data.chips;
+    if (_onUserChange) _onUserChange(_user);
+    return { success: true, chips: data.chips };
   }
 
   async function winChips(amount) {
     if (!_user) throw new Error('No autenticado');
-    try {
-      const data = await api('POST', '/api/chips/win', { amount });
-      _user.chips = data.chips;
-      setLocal('kipi_cached_chips', data.chips.toString());
-      if (_onUserChange) _onUserChange(_user);
-      return data;
-    } catch (e) {
-      const local = parseInt(getLocal('kipi_cached_chips') || '0');
-      const newChips = local + amount;
-      setLocal('kipi_cached_chips', newChips.toString());
-      _user.chips = newChips;
-      if (_onUserChange) _onUserChange(_user);
-      return { success: true, chips: newChips };
-    }
+    const data = getUserData(_user.id);
+    if (!data) throw new Error('Usuario no encontrado');
+    data.chips += amount;
+    saveUserData(_user.id, data);
+    _user.chips = data.chips;
+    if (_onUserChange) _onUserChange(_user);
+    return { success: true, chips: data.chips };
   }
 
   async function claimDailyBonus() {
     if (!_user) throw new Error('No autenticado');
-    try {
-      const data = await api('POST', '/api/daily-bonus');
-      _user.chips = data.chips;
-      _user.lastDailyBonus = new Date().toISOString().slice(0, 10);
-      setLocal('kipi_cached_chips', data.chips.toString());
-      setLocal('kipi_cached_bonus', _user.lastDailyBonus);
-      if (_onUserChange) _onUserChange(_user);
-      return data;
-    } catch (e) {
-      // Local fallback
-      const now = new Date();
-      const hour = now.getHours();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      if (hour < 13) throw new Error('Bono disponible a las 13:00');
-      const lastBonus = getLocal('kipi_cached_bonus') || '';
-      if (lastBonus === today) throw new Error('Ya reclamado hoy');
-      const local = parseInt(getLocal('kipi_cached_chips') || '0');
-      const newChips = local + 1000;
-      setLocal('kipi_cached_chips', newChips.toString());
-      setLocal('kipi_cached_bonus', today);
-      _user.chips = newChips;
-      _user.lastDailyBonus = today;
-      if (_onUserChange) _onUserChange(_user);
-      return { success: true, chips: newChips, added: 1000 };
+    const now = new Date();
+    const hour = now.getHours();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (hour < 13) {
+      const minsLeft = (13 - hour) * 60 - now.getMinutes();
+      throw new Error(`Bono disponible en ${Math.floor(minsLeft/60)}h ${minsLeft%60}min`);
     }
+
+    const data = getUserData(_user.id);
+    if (!data) throw new Error('Usuario no encontrado');
+    if (data.lastDailyBonus === today) throw new Error('Ya reclamado hoy');
+
+    data.chips += 1000;
+    data.lastDailyBonus = today;
+    saveUserData(_user.id, data);
+    _user.chips = data.chips;
+    _user.lastDailyBonus = today;
+    if (_onUserChange) _onUserChange(_user);
+    return { success: true, chips: data.chips, added: 1000 };
   }
 
   function logout() {
-    removeLocal('kipi_jwt');
-    removeLocal('kipi_session');
-    removeLocal('kipi_cached_chips');
-    removeLocal('kipi_cached_bonus');
+    localStorage.removeItem('kipi_last_user');
     _user = null;
     if (_onUserChange) _onUserChange(null);
   }
 
-  // ====== OAuth redirect flow ======
+  // ====== OAuth redirect ======
   function startLogin() {
     const nonce = Math.random().toString(36).substring(2, 15);
-    setLocal('kipi_oauth_nonce', nonce);
+    localStorage.setItem('kipi_oauth_nonce', nonce);
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       response_type: 'id_token',
@@ -177,46 +118,41 @@ window.KipiAuth = (function () {
     const idToken = params.get('id_token');
     if (!idToken) return false;
 
-    const storedNonce = getLocal('kipi_oauth_nonce');
-    removeLocal('kipi_oauth_nonce');
+    const storedNonce = localStorage.getItem('kipi_oauth_nonce');
+    localStorage.removeItem('kipi_oauth_nonce');
 
     const payload = decodeJwtPayload(idToken);
     if (!payload) return false;
     if (storedNonce && payload.nonce !== storedNonce) return false;
 
-    // Limpiar hash de la URL
     window.history.replaceState(null, '', window.location.pathname);
 
-    // Enviar id_token al backend para obtener JWT y datos del usuario
-    try {
-      const data = await api('POST', '/api/auth/google', { credential: idToken });
-      setLocal('kipi_jwt', data.token);
-      _user = {
-        id: data.user.id, name: data.user.name, email: data.user.email, avatar: data.user.avatar,
-        chips: data.user.chips, lastDailyBonus: data.user.lastDailyBonus
-      };
-      setLocal('kipi_session', JSON.stringify({ sub: data.user.id, name: data.user.name, email: data.user.email, avatar: data.user.avatar, ts: Date.now() }));
-      setLocal('kipi_cached_chips', data.user.chips.toString());
-      if (_onUserChange) _onUserChange(_user);
-      return true;
-    } catch (e) {
-      // Backend no disponible: usar datos del id_token decodificado
-      console.warn('Backend no disponible, usando datos locales:', e.message);
-      const id = payload.sub;
-      const name = payload.name || payload.email.split('@')[0];
-      const email = payload.email;
-      const avatar = payload.picture || '';
+    const id = payload.sub;
+    const name = payload.name || payload.email.split('@')[0];
+    const email = payload.email;
+    const avatar = payload.picture || '';
 
-      _user = {
-        id, name, email, avatar,
-        chips: parseInt(getLocal('kipi_cached_chips') || '1000'),
-        lastDailyBonus: getLocal('kipi_cached_bonus') || ''
-      };
-      setLocal('kipi_session', JSON.stringify({ sub: id, name, email, avatar, ts: Date.now() }));
-      setLocal('kipi_cached_chips', _user.chips.toString());
-      if (_onUserChange) _onUserChange(_user);
-      return true;
+    // Cargar o crear datos del usuario
+    let data = getUserData(id);
+    if (!data) {
+      data = { name, email, avatar, chips: 1000, lastDailyBonus: '' };
+      saveUserData(id, data);
+    } else {
+      // Actualizar perfil por si cambió
+      data.name = name;
+      data.email = email;
+      data.avatar = avatar;
+      saveUserData(id, data);
     }
+
+    localStorage.setItem('kipi_last_user', id);
+
+    _user = {
+      id, name, email, avatar,
+      chips: data.chips, lastDailyBonus: data.lastDailyBonus
+    };
+    if (_onUserChange) _onUserChange(_user);
+    return true;
   }
 
   // ====== Botón de login ======
