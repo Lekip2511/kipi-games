@@ -143,11 +143,12 @@ window.KipiAuth = (function () {
       return;
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
+    // Script de Google ya cargado en el HTML
+    function doInit() {
+      if (!window.google || !google.accounts) {
+        setTimeout(doInit, 200);
+        return;
+      }
       google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response) => {
@@ -186,8 +187,9 @@ window.KipiAuth = (function () {
       });
 
       renderCustomButton(buttonId);
-    };
-    document.head.appendChild(script);
+    }
+
+    doInit();
   }
 
   function updateButtonToLoggedIn(buttonId) {
