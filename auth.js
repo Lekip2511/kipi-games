@@ -227,13 +227,21 @@ window.KipiAuth = (function () {
 
     btn.appendChild(wrapper);
 
-    // Renderizar botón oficial de Google (más fiable que prompt)
-    google.accounts.id.renderButton(wrapper, {
-      theme: 'filled_black',
-      size: 'large',
-      text: 'signin_with',
-      shape: 'pill',
-      width: 260
+      // Renderizar botón oficial de Google (más fiable que prompt)
+      google.accounts.id.renderButton(wrapper, {
+        theme: 'filled_black',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'pill',
+        width: 260
+      });
+
+      // Si tras 3s no se renderizó, mostrar error
+      setTimeout(() => {
+        if (wrapper.children.length === 0 || !wrapper.innerHTML.includes('iframe')) {
+          wrapper.innerHTML = '<div style="color:#ef5350;font-size:12px;padding:10px;text-align:center">Error: dominio no autorizado en Google Cloud Console.<br>Añade <b>https://juegoskipi.netlify.app</b></div>';
+        }
+      }, 3000);
     });
   }
 
