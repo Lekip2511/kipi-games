@@ -9,7 +9,7 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'kipi-games-secret-' + Math.random().toString(36).slice(2);
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '116466179084-pv098dj9cj215eu8aaa93guu53dlpneo.apps.googleusercontent.com';
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 

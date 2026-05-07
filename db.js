@@ -1,7 +1,12 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'kipi.db');
+// En Render: /opt/render/project/src/data/ (disco persistente)
+// En local: mismo directorio
+const DATA_DIR = process.env.RENDER ? '/opt/render/project/src/data' : __dirname;
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const DB_PATH = path.join(DATA_DIR, 'kipi.db');
 
 let db;
 
